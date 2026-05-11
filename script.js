@@ -1,3 +1,16 @@
+// const correctSounds = [
+//   "./sound/correct1.mp3",
+//   "./sound/correct2.mp3",
+//   "./sound/correct3.mp3",
+//   "./sound/correct4.mp3",
+// ];
+
+// const wrongSounds = [
+//   "./sound/false1.mp3",
+//   "./sound/false2.mp3",
+//   "./sound/false3.mp3",
+//   "./sound/false4.mp3",
+// ];
 (function () {
   // ==================== DOM-элементы ====================
   const problemCard = document.getElementById("problemCard");
@@ -40,9 +53,11 @@
   let operandCount = 2;
 
   let memberSettings = [
-    { min: 1, max: 10, operation: "random" },
-    { min: 1, max: 10, operation: "random" },
+    { min: 1, max: 10 },
+    { min: 1, max: 10 },
   ];
+
+  let operationSettings = ["random"];
 
   const opsList = ["+", "-", "×", "÷"];
 
@@ -64,50 +79,88 @@
   // ==================== Построение UI настроек ====================
   function buildMemberUI() {
     membersContainer.innerHTML = "";
+
+    // Если 2 члена: [Член 1] [операция] [Член 2]
+    // Если 3 члена: [Член 1] [оп1] [Член 2] [оп2] [Член 3]
+    // и т.д.
+
     for (let i = 0; i < operandCount; i++) {
-      const s = memberSettings[i] || { min: 1, max: 10, operation: "random" };
+      const s = memberSettings[i] || { min: 1, max: 10 };
       const row = document.createElement("div");
       row.className = "member-row";
+
       row.innerHTML = `
                 <span class="member-label">Член ${i + 1}</span>
                 <div class="member-range">
-                    от <input type="number" class="member-min" value="${s.min}" min="0" max="100">
-                    до <input type="number" class="member-max" value="${s.max}" min="1" max="100">
+                    от <input type="number" class="member-min" value="${s.min}" min="0" max="100" data-index="${i}">
+                    до <input type="number" class="member-max" value="${s.max}" min="1" max="100" data-index="${i}">
                 </div>
-                <select class="member-op-select${s.operation === "random" ? " random-active" : ""}">
-                    <option value="random" ${s.operation === "random" ? "selected" : ""}>🎲 Случайно</option>
-                    <option value="+" ${s.operation === "+" ? "selected" : ""}>+ Сложение</option>
-                    <option value="-" ${s.operation === "-" ? "selected" : ""}>− Вычитание</option>
-                    <option value="×" ${s.operation === "×" ? "selected" : ""}>× Умножение</option>
-                    <option value="÷" ${s.operation === "÷" ? "selected" : ""}>÷ Деление</option>
-                </select>
             `;
 
+      // Обработчики изменения диапазона
       const minInp = row.querySelector(".member-min");
       const maxInp = row.querySelector(".member-max");
-      const sel = row.querySelector(".member-op-select");
 
-      const update = () => {
-        let mn = parseInt(minInp.value) || 1;
-        let mx = parseInt(maxInp.value) || 10;
-        if (mn < 0) mn = 0;
-        if (mx < 1) mx = 1;
-        if (mn > mx) [mn, mx] = [mx, mn];
-        minInp.value = mn;
-        maxInp.value = mx;
-        memberSettings[i].min = mn;
-        memberSettings[i].max = mx;
-        memberSettings[i].operation = sel.value;
-        sel.classList.toggle("random-active", sel.value === "random");
-        generateNewProblem();
-        answerInput.focus();
-      };
+      if (minInp && maxInp) {
+        const updateRange = () => {
+          const idx = parseInt(minInp.dataset.index);
+          let mn = parseInt(minInp.value);
+          let mx = parseInt(maxInp.value);
 
-      minInp.addEventListener("change", update);
-      maxInp.addEventListener("change", update);
-      sel.addEventListener("change", update);
+          // Исправляем: проверяем на NaN
+          if (isNaN(mn)) mn = memberSettings[idx]?.min || 1;
+          if (isNaN(mx)) mx = memberSettings[idx]?.max || 10;
+          if (mn < 0) mn = 0;
+          if (mx < 1) mx = 1;
+          if (mn > mx) [mn, mx] = [mx, mn];
+
+          minInp.value = mn;
+          maxInp.value = mx;
+          memberSettings[idx].min = mn;
+          memberSettings[idx].max = mx;
+          generateNewProblem();
+          answerInput.focus();
+        };
+
+        minInp.addEventListener("change", updateRange);
+        maxInp.addEventListener("change", updateRange);
+      }
 
       membersContainer.appendChild(row);
+
+      // Добавляем операцию после каждого члена, кроме последнего
+      if (i < operandCount - 1) {
+        const opRow = document.createElement("div");
+        opRow.className = "member-row";
+        opRow.style.justifyContent = "center";
+        opRow.style.background = "#f5f3ff";
+        opRow.style.border = "2px dashed #c4b5fd";
+
+        const op = operationSettings[i] || "random";
+        opRow.innerHTML = `
+                    <span class="member-label">Действие ${i + 1}</span>
+                    <select class="member-op-select${op === "random" ? " random-active" : ""}" data-op-index="${i}">
+                        <option value="random" ${op === "random" ? "selected" : ""}>🎲 Случайно</option>
+                        <option value="+" ${op === "+" ? "selected" : ""}>+ Сложение</option>
+                        <option value="-" ${op === "-" ? "selected" : ""}>− Вычитание</option>
+                        <option value="×" ${op === "×" ? "selected" : ""}>× Умножение</option>
+                        <option value="÷" ${op === "÷" ? "selected" : ""}>÷ Деление</option>
+                    </select>
+                `;
+
+        const sel = opRow.querySelector(".member-op-select");
+        if (sel) {
+          sel.addEventListener("change", () => {
+            const opIdx = parseInt(sel.dataset.opIndex);
+            operationSettings[opIdx] = sel.value;
+            sel.classList.toggle("random-active", sel.value === "random");
+            generateNewProblem();
+            answerInput.focus();
+          });
+        }
+
+        membersContainer.appendChild(opRow);
+      }
     }
   }
 
@@ -124,12 +177,21 @@
     const newCount = parseInt(pill.dataset.count);
     if (newCount !== operandCount) {
       operandCount = newCount;
+
       while (memberSettings.length < operandCount) {
-        memberSettings.push({ min: 1, max: 10, operation: "random" });
+        memberSettings.push({ min: 1, max: 10 });
       }
       while (memberSettings.length > operandCount) {
         memberSettings.pop();
       }
+
+      while (operationSettings.length < operandCount - 1) {
+        operationSettings.push("random");
+      }
+      while (operationSettings.length > operandCount - 1) {
+        operationSettings.pop();
+      }
+
       buildMemberUI();
       generateNewProblem();
       answerInput.focus();
@@ -138,111 +200,91 @@
 
   // ==================== Генерация примера ====================
   function generateProblem() {
-    const maxAttempts = 500;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const operands = [];
+    // Пробуем сгенерировать пример 1000 раз
+    for (let attempt = 0; attempt < 1000; attempt++) {
+      // 1. Определяем, какие операции будут между членами
       const ops = [];
-
       for (let i = 0; i < operandCount - 1; i++) {
-        let op = memberSettings[i].operation;
+        let op = operationSettings[i] || "random";
         if (op === "random") {
           op = opsList[Math.floor(Math.random() * opsList.length)];
         }
         ops.push(op);
       }
 
-      const firstSettings = memberSettings[0];
-      operands.push(randInt(firstSettings.min, firstSettings.max));
+      // 2. Генерируем числа для каждого члена В ЕГО ДИАПАЗОНЕ
+      const operands = [];
+      for (let i = 0; i < operandCount; i++) {
+        const settings = memberSettings[i];
+        if (!settings) continue;
+
+        // Просто случайное число от min до max
+        const num = randInt(settings.min, settings.max);
+        operands.push(num);
+      }
+
+      // 3. Вычисляем ответ (слева направо, без приоритета операций)
+      let answer = operands[0];
       let valid = true;
 
       for (let i = 0; i < ops.length; i++) {
-        const op = ops[i];
-        const nextSettings = memberSettings[i + 1];
-
-        if (!nextSettings) {
-          valid = false;
-          break;
-        }
-
-        let next;
-
-        if (op === "+" || op === "-" || op === "×") {
-          next = randInt(nextSettings.min, nextSettings.max);
-        } else if (op === "÷") {
-          const current = operands[i];
-          const candidates = [];
-
-          for (let d = nextSettings.min; d <= nextSettings.max; d++) {
-            if (d !== 0 && current % d === 0) {
-              candidates.push(d);
-            }
-          }
-
-          if (candidates.length === 0) {
-            valid = false;
-            break;
-          }
-          next = candidates[Math.floor(Math.random() * candidates.length)];
-        } else {
-          valid = false;
-          break;
-        }
-
-        operands.push(next);
-      }
-
-      if (!valid) continue;
-
-      let answer = operands[0];
-      for (let i = 0; i < ops.length; i++) {
         const b = operands[i + 1];
+
         switch (ops[i]) {
           case "+":
             answer += b;
             break;
           case "-":
             answer -= b;
+            // Проверяем только что ответ не отрицательный (для детей)
+            if (answer < 0) valid = false;
             break;
           case "×":
             answer *= b;
             break;
           case "÷":
-            if (b === 0) {
+            // Проверяем, что деление будет нацело
+            if (b === 0 || answer % b !== 0) {
               valid = false;
-              break;
+            } else {
+              answer /= b;
             }
-            answer /= b;
             break;
         }
+
         if (!valid) break;
       }
 
-      if (!valid) continue;
-
-      const lastSettings = memberSettings[operandCount - 1];
-
-      if (
-        Number.isInteger(answer) &&
-        answer >= lastSettings.min &&
-        answer <= lastSettings.max &&
-        !isNaN(answer) &&
-        isFinite(answer)
-      ) {
+      // 4. Проверяем только что ответ натуральный (целый и неотрицательный)
+      if (valid && Number.isInteger(answer) && answer >= 0) {
+        // 5. Формируем строку для отображения
         let expr = String(operands[0]);
         for (let i = 0; i < ops.length; i++) {
           expr += ` ${ops[i]} ${operands[i + 1]}`;
         }
         expr += ' = <span class="highlight">?</span>';
 
-        return { expressionStr: expr, answer };
+        return {
+          expressionStr: expr,
+          answer: answer,
+          operands: operands,
+          ops: ops,
+        };
       }
     }
 
-    // Запасной вариант
-    console.warn("Использую запасной пример");
-    const a = randInt(1, 10);
-    const b = randInt(1, 10);
+    // Если не удалось подобрать за 1000 попыток — упрощённый пример
+    console.warn(
+      "Не удалось подобрать пример с заданными параметрами, использую запасной",
+    );
+    const a = randInt(
+      memberSettings[0]?.min || 1,
+      memberSettings[0]?.max || 10,
+    );
+    const b = randInt(
+      memberSettings[1]?.min || 1,
+      memberSettings[1]?.max || 10,
+    );
     return {
       expressionStr: `${a} + ${b} = <span class="highlight">?</span>`,
       answer: a + b,
@@ -306,7 +348,7 @@
         messages[Math.floor(Math.random() * messages.length)];
       feedbackMsg.className = "feedback-msg correct";
       mascotEmoji.textContent = "🥳";
-      playRandomSound(correctSounds); // 🔊 Случайный звук победы
+      playRandomSound(correctSounds);
     } else {
       wrong++;
       streak = 0;
@@ -316,7 +358,7 @@
       feedbackMsg.innerHTML = `Не совсем! Ответ: <strong>${currentProblem.answer}</strong> 💪`;
       feedbackMsg.className = "feedback-msg wrong";
       mascotEmoji.textContent = "🦉💜";
-      playRandomSound(wrongSounds); // 🔊 Случайный звук ошибки
+      playRandomSound(wrongSounds);
     }
 
     updateStats();

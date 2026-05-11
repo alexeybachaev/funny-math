@@ -36,6 +36,7 @@
                 <span id="bestStreakDisplay">0</span>
             </div>
             <button class="reset-btn" id="resetBtn" title="Сбросить счёт">🔄 Сброс</button>
+            <button class="reset-btn" id="themeBtn" title="Тёмная/светлая тема">🌙</button>
         </div>
 
         <!-- Настройки -->
@@ -61,8 +62,8 @@
 
         <!-- Поле ввода и кнопка проверки -->
         <div class="input-area">
-            <input type="number" class="answer-input" id="answerInput" placeholder="?" inputmode="numeric"
-                autocomplete="off">
+            <input type="text" class="answer-input" id="answerInput" placeholder="?" inputmode="numeric"
+                pattern="[0-9]*" autocomplete="off">
             <button class="submit-btn" id="submitBtn">✅ Проверить</button>
         </div>
 
@@ -75,6 +76,7 @@
         <div style="text-align:center;">
             <span class="feedback-msg" id="feedbackMsg"></span>
         </div>
+
         <!-- История ответов (шарики) -->
         <div style="text-align:center; margin-top: 4px;">
             <div class="history-dots" id="historyDots"></div>

@@ -27,6 +27,7 @@
   const resetBtn = document.getElementById("resetBtn");
   const membersContainer = document.getElementById("membersContainer");
   const countPills = document.getElementById("countPills");
+  const historyDots = document.getElementById("historyDots");
 
   // ==================== Звуковые массивы ====================
   const correctSounds = [
@@ -51,6 +52,7 @@
   let currentProblem = null;
   let isWaitingForNext = false;
   let operandCount = 2;
+  let history = []; // массив 'correct' | 'wrong', максимум 20 штук
 
   let memberSettings = [
     { min: 1, max: 10 },
@@ -162,6 +164,18 @@
         membersContainer.appendChild(opRow);
       }
     }
+  }
+
+  function updateHistoryDots() {
+    if (!historyDots) return;
+    historyDots.innerHTML = "";
+    const recent = history.slice(-15); // показываем последние 15
+    recent.forEach((result) => {
+      const dot = document.createElement("span");
+      dot.className =
+        "history-dot " + (result === "correct" ? "correct-dot" : "wrong-dot");
+      historyDots.appendChild(dot);
+    });
   }
 
   // ==================== Выбор количества членов ====================
@@ -349,6 +363,9 @@
       feedbackMsg.className = "feedback-msg correct";
       mascotEmoji.textContent = "🥳";
       playRandomSound(correctSounds);
+      history.push("correct");
+      if (history.length > 20) history.shift();
+      updateHistoryDots();
     } else {
       wrong++;
       streak = 0;
@@ -359,6 +376,9 @@
       feedbackMsg.className = "feedback-msg wrong";
       mascotEmoji.textContent = "🦉💜";
       playRandomSound(wrongSounds);
+      history.push("wrong");
+      if (history.length > 20) history.shift();
+      updateHistoryDots();
     }
 
     updateStats();
@@ -402,6 +422,8 @@
     updateStats();
     generateNewProblem();
     answerInput.focus();
+    history = [];
+    updateHistoryDots();
   });
 
   // ==================== Инициализация ====================

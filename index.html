@@ -3,105 +3,81 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎓 Весёлая математика — Тренажёр таблицы умножения</title>
-    <link rel="stylesheet" href="./style.css">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>🎓 Весёлая математика — Тренажёр</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
-    <!-- Confetti & floating emoji containers -->
-    <div class="confetti-container" id="confettiContainer"></div>
-
-    <!-- Main App -->
-    <div class="app-container" id="appContainer">
-        <!-- Header -->
+    <div class="app-container">
+        <!-- Заголовок -->
         <div class="app-header">
             <span class="mascot" id="mascotEmoji">🦉</span>
-            <h1>Весёлая <span>математика</span></h1>
+            <h1>Весёлая <span class="gradient-text">математика</span></h1>
         </div>
 
-        <!-- Stats -->
+        <!-- Статистика -->
         <div class="stats-row">
             <div class="stat-badge" title="Правильных ответов">
-                <span class="emoji">⭐</span> <span id="scoreDisplay">0</span>
+                <span class="emoji">⭐</span>
+                <span id="scoreDisplay">0</span>
             </div>
-            <div class="stat-badge streak-badge" id="streakBadge" title="Серия правильных подряд">
-                <span class="emoji">🔥</span> <span id="streakDisplay">0</span>
+            <div class="stat-badge wrong-badge" title="Неправильных ответов">
+                <span class="emoji">❌</span>
+                <span id="wrongDisplay">0</span>
+            </div>
+            <div class="stat-badge streak-badge" title="Серия правильных">
+                <span class="emoji">🔥</span>
+                <span id="streakDisplay">0</span>
             </div>
             <div class="stat-badge" title="Лучшая серия">
-                <span class="emoji">🏆</span> <span id="bestStreakDisplay">0</span>
+                <span class="emoji">🏆</span>
+                <span id="bestStreakDisplay">0</span>
             </div>
             <button class="reset-btn" id="resetBtn" title="Сбросить счёт">🔄 Сброс</button>
         </div>
 
-        <!-- Settings -->
+        <!-- Настройки -->
         <div class="settings-panel">
-            <!-- Operation -->
+            <!-- Выбор количества членов -->
             <div class="settings-row">
-                <span class="settings-label">Действие</span>
-                <div class="op-pills" id="opPills">
-                    <button class="op-pill" data-op="add" title="Сложение">+</button>
-                    <button class="op-pill" data-op="subtract" title="Вычитание">−</button>
-                    <button class="op-pill active" data-op="multiply" title="Умножение">×</button>
-                    <button class="op-pill" data-op="divide" title="Деление">÷</button>
-                </div>
-            </div>
-
-            <!-- Range -->
-            <div class="settings-row">
-                <span class="settings-label">Числа</span>
-                <div class="range-group">
-                    <span style="font-size:0.8rem;color:#9ca3af;">от</span>
-                    <input type="number" id="minNumber" value="1" min="0" max="100" step="1">
-                </div>
-                <span class="range-sep">до</span>
-                <div class="range-group">
-                    <input type="number" id="maxNumber" value="10" min="1" max="100" step="1">
-                </div>
-            </div>
-
-            <!-- Operand count -->
-            <div class="settings-row">
-                <span class="settings-label">Количество </span>
+                <span class="settings-label">Членов</span>
                 <div class="count-pills" id="countPills">
                     <button class="count-pill active" data-count="2">2</button>
                     <button class="count-pill" data-count="3">3</button>
                     <button class="count-pill" data-count="4">4</button>
                 </div>
             </div>
+
+            <!-- Индивидуальные настройки для каждого члена -->
+            <div class="members-container" id="membersContainer"></div>
         </div>
 
-        <!-- Problem -->
+        <!-- Карточка с примером -->
         <div class="problem-card" id="problemCard">
             <div class="problem-expression" id="problemExpression"></div>
         </div>
 
-        <!-- Input -->
+        <!-- Поле ввода и кнопка проверки -->
         <div class="input-area">
             <input type="number" class="answer-input" id="answerInput" placeholder="?" inputmode="numeric"
                 autocomplete="off">
             <button class="submit-btn" id="submitBtn">✅ Проверить</button>
         </div>
 
-        <!-- Кнопка "Далее" (изначально скрыта) -->
-        <div style="text-align:center; margin-top: 8px;">
-            <button class="submit-btn" id="nextBtn"
-                style="display: none; background: linear-gradient(135deg, #10b981, #059669);">
-                ⏩ Далее
-            </button>
+        <!-- Кнопка "Далее" -->
+        <div style="text-align:center;">
+            <button class="next-btn" id="nextBtn">⏩ Далее</button>
         </div>
 
-        <!-- Feedback -->
+        <!-- Сообщение обратной связи -->
         <div style="text-align:center;">
             <span class="feedback-msg" id="feedbackMsg"></span>
         </div>
-
-        <!-- History dots -->
-        <div class="history-dots" id="historyDots"></div>
     </div>
-    <!-- Звуковые эффекты -->
-    <script src="./index.js"></script>
+
+    <script src="script.js"></script>
 </body>
 
 </html>

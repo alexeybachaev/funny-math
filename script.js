@@ -299,6 +299,8 @@
           maxInp.value = mx;
           memberSettings[idx].min = mn;
           memberSettings[idx].max = mx;
+          currentProblem = null; // сбрасываем текущий пример
+          if (saved) saved.lastProblem = null; // сбрасываем сохранённый
           saveData();
           generateNewProblem();
           answerInput.focus();
@@ -335,6 +337,8 @@
             const opIdx = parseInt(sel.dataset.opIndex);
             operationSettings[opIdx] = sel.value;
             sel.classList.toggle("random-active", sel.value === "random");
+            currentProblem = null;
+            if (saved) saved.lastProblem = null;
             saveData();
             generateNewProblem();
             answerInput.focus();
@@ -383,10 +387,13 @@
         operationSettings.pop();
       }
 
+      // Сбрасываем сохранённый пример
+      if (saved) saved.lastProblem = null;
+
       saveData();
       buildMemberUI();
       generateNewProblem();
-      answerInput.focus();
+      setTimeout(() => answerInput.focus(), 100);
     }
   });
 
@@ -410,31 +417,10 @@
         operands.push(num);
       }
 
-      let answer = operands[0];
-      let valid = true;
+      // Вычисляем ответ с учётом приоритета: сначала × и ÷, потом + и -
+      let answer = calculateWithPriority(operands, ops);
 
-      for (let i = 0; i < ops.length; i++) {
-        const b = operands[i + 1];
-        switch (ops[i]) {
-          case "+":
-            answer += b;
-            break;
-          case "-":
-            answer -= b;
-            if (answer < 0) valid = false;
-            break;
-          case "×":
-            answer *= b;
-            break;
-          case "÷":
-            if (b === 0 || answer % b !== 0) valid = false;
-            else answer /= b;
-            break;
-        }
-        if (!valid) break;
-      }
-
-      if (valid && Number.isInteger(answer) && answer >= 0) {
+      if (answer !== null && Number.isInteger(answer) && answer >= 0) {
         let expr = String(operands[0]);
         for (let i = 0; i < ops.length; i++) {
           expr += ` ${ops[i]} ${operands[i + 1]}`;
@@ -464,6 +450,48 @@
     };
   }
 
+  // Новая функция: вычисление с приоритетом × и ÷
+  function calculateWithPriority(operands, ops) {
+    // Создаём копии массивов, чтобы не менять оригиналы
+    let nums = [...operands];
+    let operations = [...ops];
+
+    // Первый проход: выполняем все × и ÷ слева направо
+    for (let i = 0; i < operations.length; i++) {
+      if (operations[i] === "×" || operations[i] === "÷") {
+        const a = nums[i];
+        const b = nums[i + 1];
+        let result;
+
+        if (operations[i] === "×") {
+          result = a * b;
+        } else {
+          if (b === 0 || a % b !== 0) return null; // деление не нацело — не подходит
+          result = a / b;
+        }
+
+        // Заменяем два числа одним результатом
+        nums.splice(i, 2, result);
+        operations.splice(i, 1);
+        i--; // отступаем назад, так как массив уменьшился
+      }
+    }
+
+    // Второй проход: выполняем все + и - слева направо
+    let result = nums[0];
+    for (let i = 0; i < operations.length; i++) {
+      const b = nums[i + 1];
+      if (operations[i] === "+") {
+        result += b;
+      } else if (operations[i] === "-") {
+        result -= b;
+        if (result < 0) return null; // отрицательный результат не подходит
+      }
+    }
+
+    return result;
+  }
+
   function generateNewProblem() {
     if (
       saved &&
@@ -478,12 +506,15 @@
       };
     } else {
       currentProblem = generateProblem();
-      saved.lastProblem = {
-        expressionStr: currentProblem.expressionStr,
-        answer: currentProblem.answer,
-        _pending: true,
-      };
-      saveData();
+      // Сохраняем только если это новый пример (не из настроек)
+      if (!currentProblem._dontSave) {
+        saved.lastProblem = {
+          expressionStr: currentProblem.expressionStr,
+          answer: currentProblem.answer,
+          _pending: true,
+        };
+        saveData();
+      }
     }
 
     problemExpression.innerHTML = currentProblem.expressionStr;
@@ -526,6 +557,7 @@
     if (saved && saved.lastProblem) {
       delete saved.lastProblem._pending;
     }
+    saveData();
 
     if (isCorrect) {
       score++;

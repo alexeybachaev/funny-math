@@ -503,9 +503,11 @@
         expressionStr: saved.lastProblem.expressionStr,
         answer: saved.lastProblem.answer,
         _pending: false,
+        _hasError: false,
       };
     } else {
       currentProblem = generateProblem();
+      currentProblem._hasError = false;
       // Сохраняем только если это новый пример (не из настроек)
       if (!currentProblem._dontSave) {
         saved.lastProblem = {
@@ -550,21 +552,26 @@
     }
 
     const isCorrect = userAnswer === currentProblem.answer;
-    isWaitingForNext = true;
-    answerInput.disabled = true;
-    submitBtn.disabled = true;
-
-    if (saved && saved.lastProblem) {
-      delete saved.lastProblem._pending;
-    }
-    saveData();
 
     if (isCorrect) {
+      isWaitingForNext = true;
+      answerInput.disabled = true;
+      submitBtn.disabled = true;
+
+      if (saved && saved.lastProblem) {
+        delete saved.lastProblem._pending;
+      }
+
       score++;
       streak++;
       if (streak > bestStreak) bestStreak = streak;
-      history.push("correct");
-      if (history.length > 20) history.shift();
+
+      // Добавляем зелёный шарик только если не было ошибок
+      // Если были ошибки — красный уже добавлен, новый не добавляем
+      if (!currentProblem._hasError) {
+        history.push("correct");
+        if (history.length > 20) history.shift();
+      }
 
       problemCard.classList.add("celebrate", "pulse-card");
       answerInput.classList.add("correct-flash");
@@ -590,11 +597,21 @@
       playRandomSound(correctSounds);
       spawnConfetti();
       spawnFloatingEmojis();
+
+      saveData();
+      updateStats();
+      updateHistoryDots();
+      nextBtn.style.display = "inline-block";
+      nextBtn.focus();
     } else {
-      wrong++;
-      streak = 0;
-      history.push("wrong");
-      if (history.length > 20) history.shift();
+      // Первая ошибка для этого примера — увеличиваем счётчик, добавляем красный шарик
+      if (!currentProblem._hasError) {
+        wrong++;
+        streak = 0;
+        history.push("wrong");
+        if (history.length > 20) history.shift();
+        currentProblem._hasError = true;
+      }
 
       problemCard.classList.add("shake");
       answerInput.classList.add("wrong-flash");
@@ -602,17 +619,28 @@
         Math.floor(Math.random() * 4)
       ];
 
-      feedbackMsg.innerHTML = `Не совсем! Ответ: <strong>${currentProblem.answer}</strong> 💪`;
+      feedbackMsg.innerHTML = `Не совсем! Правильный ответ: <strong>${currentProblem.answer}</strong>. Попробуй ещё раз! 💪`;
       feedbackMsg.className = "feedback-msg wrong";
 
       playRandomSound(wrongSounds);
-    }
 
-    saveData();
-    updateStats();
-    updateHistoryDots();
-    nextBtn.style.display = "inline-block";
-    nextBtn.focus();
+      // Даём ввести заново
+      answerInput.value = "";
+      answerInput.disabled = false;
+      submitBtn.disabled = false;
+      isWaitingForNext = false;
+
+      saveData();
+      updateStats();
+      updateHistoryDots();
+
+      setTimeout(() => {
+        answerInput.classList.remove("wrong-flash");
+        problemCard.classList.remove("shake");
+      }, 600);
+
+      answerInput.focus();
+    }
   }
 
   function updateStats() {
